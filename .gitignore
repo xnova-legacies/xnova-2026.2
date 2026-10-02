@@ -49,6 +49,7 @@ Temporary Items
 # Local environment files and secrets
 .env
 .env.*
+configs/config.php
 configs/.env
 configs/.env.*
 !configs/.env.example
