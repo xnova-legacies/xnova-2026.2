@@ -1,8 +1,12 @@
-# Environnement de **production** : une étiquette `v*` publiée **sur `main`**.
+# Environnement de **production** : une étiquette `v*` publiée **sur `master`**.
 #
 # Une étiquette ne porte pas la branche d'où elle vient, donc le travail le vérifie
-# lui-même : `main` porte les versions publiées, `develop` le travail en cours, et
+# lui-même : `master` porte les versions publiées, `develop` le travail en cours, et
 # une étiquette posée sur `develop` ne doit pas partir en production.
+#
+# Le nom est écrit **une seule fois**, dans `PUBLISHED_BRANCH` en tête du travail : les
+# deux contrôles et leurs messages le lisent. Le dépôt a renommé sa branche par défaut
+# (`main` devenu `master`) : le jour où elle changera encore, une ligne suffira.
 # L'environnement GitHub `production` porte les règles de protection — une
 # approbation obligatoire, par exemple —, donc la publication attend le feu vert.
 name: Deploy Production
@@ -35,22 +39,25 @@ jobs:
 
     steps:
       # L'étiquette est posée sur un commit : on construit exactement celui-là.
-      # L'historique complet est nécessaire pour situer ce commit par rapport à `main`.
+      # L'historique complet est nécessaire pour situer ce commit par rapport à `master`.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      # Une étiquette posée sur `develop` ne part pas en production : c'est `main`
+      # Une étiquette posée sur `develop` ne part pas en production : c'est `master`
       # qui porte les versions publiées. Le contrôle porte sur le commit visé, pas sur
       # la branche poussée (une poussée d'étiquette n'en porte aucune).
-      - name: L'étiquette est-elle posée sur main ?
+      - name: L'étiquette est-elle posée sur master ?
+        env:
+          # La branche qui porte les versions publiées : le nom s'écrit ici, une fois.
+          PUBLISHED_BRANCH: master
         run: |
-          if ! git rev-parse --verify --quiet origin/main >/dev/null; then
-            echo "::error::La branche main est introuvable : impossible de situer l'étiquette."
+          if ! git rev-parse --verify --quiet "origin/$PUBLISHED_BRANCH" >/dev/null; then
+            echo "::error::La branche $PUBLISHED_BRANCH est introuvable : impossible de situer l'étiquette."
             exit 1
           fi
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::L'étiquette ${{ github.ref_name }} n'est pas posée sur main."
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/$PUBLISHED_BRANCH"; then
+            echo "::error::L'étiquette ${{ github.ref_name }} n'est pas posée sur $PUBLISHED_BRANCH."
             exit 1
           fi
 
