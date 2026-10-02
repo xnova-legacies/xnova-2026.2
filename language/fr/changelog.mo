@@ -32,6 +32,7 @@ $lang['Version']     = 'Version';
 $lang['Description'] = 'D&eacute;scription';
 $lang['changelog']   = array(
 
+'<span class="text-success">1.0.1</span>' => 'PHP 8.5',
 '<span class="text-success">1.0.0</span>' => 'Les officiers deviennent un module, et le Coeur de l\'application ne les connaît plus
 - MOD : L\'officier n\'est plus une notion du Coeur de l\'application : ses tables de jeu (601 à 615), ses coefficients (`OfficerBonus::EFFECTS`, une seule copie pour tout le module), ses pages, sa langue et ses migrations vivent dans `modules/officier/`. Le Coeur de l\'application garde ses **points de surcharge** — `durationBonus()`, `shipCount()`, `constructionRewards()`, `storageBonus()`, `productionBonus()`, `productionFactor()`, `BattleEngine::bonus()`, `UserRepository::rewardRaid()`, `TechTreeService::extraSections()` —, vides ou neutres sans module et remplis par lui.
 - MOD : Plus aucun code du Coeur de l\'application ne nomme une colonne d\'officier : elles naissent dans la migration du module (`users.rpg_*`, `xpminier`, `xpraid`, `lvl_minier`, `lvl_raid`), la file de construction les écrit par `saveUserFields()` — qui reçoit les noms de l\'appelant —, et la fiche d\'information comme la vue des ressources lisent la règle du module.
