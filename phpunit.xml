@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheDirectory=".phpunit.cache"
+         colors="true">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+            <!-- Les tests d'un module voyagent avec lui (`modules/<nom>/tests/`, namespace
+                 `Modules\<Nom>\Tests\`) : la suite du Core les découvre, sans liste à tenir
+                 à jour — et sans eux, il n'y a rien à découvrir. -->
+            <directory>modules</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

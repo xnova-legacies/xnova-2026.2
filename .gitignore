@@ -1,0 +1,85 @@
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# =========================
+# Operating System Files
+# =========================
+
+# OSX
+# =========================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Local environment files and secrets
+.env
+.env.*
+configs/.env
+configs/.env.*
+!configs/.env.example
+# Vestige du jeu d'origine : recréé vide au démarrage du conteneur (mode local).
+# Le code ne lit que configs/config.php — mesuré : aucune page ne le recrée.
+/config.php
+
+# Composer and PHPUnit generated files
+/vendor/
+/.phpunit.cache/
+
+# Les **modules sont versionnés avec le dépôt** : leur code, leurs tests, leurs langues,
+# leurs migrations et leurs gabarits voyagent donc ensemble (le Coeur d'application, lui,
+# les découvre par leur manifeste).
+#
+# Seule la **quarantaine** reste hors du dépôt : l'archive d'un module désinstallé est un
+# **état d'installation**, pas du code. Le dossier et ses emplacements restent suivis
+# (l'application sait aussi les créer — `ModuleService::archiveDirectory()`,
+# `ModuleInstallService::inspect()`), d'où les `.gitkeep` conservés un par niveau.
+modules/*
+!modules/README.md
+!modules/.archive/
+modules/.archive/*
+!modules/.archive/.gitkeep
+!modules/.archive/.upload/
+modules/.archive/.upload/*
+!modules/.archive/.upload/.gitkeep
+# Prototype de jeu en Python (pygame/pygbag), hors du jeu : il n'est pas versionné.
+# Ses fichiers restent sur le disque — `git add -f mini-rts/<fichier>` pour en suivre un.
+mini-rts/
+
+# Bytecode Python, au cas où un outil en produirait ici.
+__pycache__/
+*.pyc

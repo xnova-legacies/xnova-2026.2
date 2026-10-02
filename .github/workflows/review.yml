@@ -1,0 +1,58 @@
+# Revue : chaque branche de travail vérifie que son image se construit encore, avant
+# d'être fusionnée.
+#
+# **Rien n'est publié** : seule une étiquette de version (`production.yml`) pousse une
+# image sur GHCR. Sans cela, chaque poussée encombrerait les paquets du dépôt, et une
+# branche abandonnée y laisserait son image pour toujours.
+name: Check Review Image
+
+# Toute branche de travail déclenche la revue : avec un numéro de ticket
+# (`feat/SCF-1234-...`) comme sans (`feat/...`), puisqu'il n'existe pas toujours.
+# Conséquence à connaître : chaque poussée sur une branche consomme une construction
+# d'image (une dizaine de minutes) — c'est le prix de la vérification par branche.
+on:
+  push:
+    branches:
+      - 'feat/**'
+      - 'fix/**'
+      - 'refactor/**'
+      - 'docs/**'
+
+# Une nouvelle poussée sur la même branche remplace la précédente : la revue porte
+# toujours sur le dernier commit, et deux poussées rapprochées ne se marchent pas dessus.
+concurrency:
+  group: review-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  qualite:
+    uses: ./.github/workflows/_quality.yml
+
+  image:
+    name: Construction de l'image
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Environnement GitHub `review` : il garde ses secrets et ses règles, mais n'annonce
+    # plus d'URL, puisqu'aucune image n'est publiée.
+    environment:
+      name: review
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

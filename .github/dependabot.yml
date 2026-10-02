@@ -1,0 +1,46 @@
+# Veille gratuite, sans rien installer.
+#
+# Dependabot lit les dépendances **déclarées** (composer.json, les `uses:` des workflows,
+# les images des Dockerfile) et ouvre une pull request quand une version corrige une
+# vulnérabilité ou prend du retard. Les alertes de sécurité et les correctifs de sécurité
+# sont déjà actifs sur le dépôt ; ce fichier ajoute les mises à jour **de version** et
+# règle le rythme, pour que les branches arrivent au compte-gouttes et pas par vingt.
+version: 2
+updates:
+  # PHP : workerman, phpunit, phpcs, la barre de debug.
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+
+  # Les actions des workflows : une version figée prend du retard sans qu'on le voie.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
+      - ci
+
+  # Les images de base : `Dockerfile`, `Dockerfile.ws`, `Dockerfile.stats`.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(docker)"
+    labels:
+      - dependencies
+      - docker

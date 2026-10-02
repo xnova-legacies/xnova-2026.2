@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<ruleset name="xnova">
+    <description>
+        PSR-12 sur le code **moderne** du jeu et des modules.
+
+        Le principe : le code neuf (`app/`, `modules/`, `tests/`, `db/`, `tools/`) suit
+        PSR-12, le legacy non — `app/Core/Legacy/*` est repris tel quel du jeu d'origine
+        (tabulations, tournures d'un autre temps) et le réécrire serait un lot à part
+        entière, sans gain fonctionnel. On l'exclut donc du contrôle, comme les gabarits
+        (`app/View/*.tpl`, qui ne sont pas du PHP).
+
+        En local comme en intégration continue : `composer cs` (et `composer cs:fix` pour
+        les corrections automatiques).
+    </description>
+
+    <!-- Code du jeu et des modules, tests, outillage en ligne de commande. -->
+    <file>app</file>
+    <file>modules</file>
+    <file>tests</file>
+    <file>db</file>
+    <file>tools</file>
+
+    <!-- Le legacy est repris tel quel ; les gabarits ne sont pas du PHP. -->
+    <exclude-pattern>app/Core/Legacy/*</exclude-pattern>
+    <exclude-pattern>app/View/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <!-- `db/mysql.php` : la connexion historique (classe globale, propriétés sans
+         visibilité), appelée par le code legacy. La réécrire n'est pas un lot de style. -->
+    <exclude-pattern>db/mysql.php</exclude-pattern>
+
+    <!-- `tools/skin_modern/` : le générateur d'images, hors du jeu (aucun code du jeu ne le
+         charge) ; ses deux classes utilitaires sont appelées en statique par les scripts du
+         même dossier, et l'outil est déjà validé image par image. -->
+    <exclude-pattern>tools/skin_modern/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg name="report" value="summary"/>
+    <!-- Les avertissements ne font pas échouer le contrôle ; les erreurs, si. -->
+    <arg name="warning-severity" value="0"/>
+
+    <rule ref="PSR12">
+        <!-- Les textes du jeu vivent dans des chaînes longues (SQL, libellés) : PSR-12 ne
+             fixe d'ailleurs aucune limite dure, seulement une recommandation. -->
+        <exclude name="Generic.Files.LineLength"/>
+        <!-- Convention du dépôt : `declare(strict_types=1);` d'abord, le docblock de
+             fichier **après** (migrations, outils en ligne de commande). PSR-12 demande
+             l'inverse — écart assumé, écrit ici une fois pour toutes. -->
+        <exclude name="PSR12.Files.FileHeader"/>
+    </rule>
+
+    <!-- Fins de ligne : LF (`.gitattributes` l'impose déjà à Git). -->
+    <rule ref="Generic.Files.LineEndings">
+        <properties>
+            <property name="eolChar" value="\n"/>
+        </properties>
+    </rule>
+
+    <!-- Encodage : UTF-8 sans BOM. -->
+    <rule ref="Generic.Files.ByteOrderMark"/>
+
+    <!--
+        Sécurité : refuser les fonctions qui lancent un programme ou fabriquent du code.
+        Le jeu n'en utilise aucune ; le contrôle les empêche de revenir par une porte
+        dérobée (un outil de module, un script ajouté à la va-vite).
+
+        Deux cas volontairement **hors** de la liste, à connaître :
+          - `eval()` sert aux formules de production du jeu (`ProdGrid`, évalué par
+            `ProductionService`) — c'est le point à surveiller, car une table apportée par
+            un module peut y glisser du code ;
+          - `extract()` reste employé par `AllianceController` (3 sites) : à retirer avant
+            de pouvoir l'interdire ici.
+    -->
+    <rule ref="Generic.PHP.ForbiddenFunctions">
+        <properties>
+            <property name="forbiddenFunctions" type="array">
+                <element key="exec" value="null"/>
+                <element key="shell_exec" value="null"/>
+                <element key="system" value="null"/>
+                <element key="passthru" value="null"/>
+                <element key="popen" value="null"/>
+                <element key="proc_open" value="null"/>
+                <element key="pcntl_exec" value="null"/>
+                <element key="create_function" value="null"/>
+            </property>
+        </properties>
+    </rule>
+</ruleset>

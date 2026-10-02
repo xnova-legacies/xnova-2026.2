@@ -1,0 +1,1342 @@
+/* ------------------------------------------------------------------
+   Theme XNova : surcouche Bootstrap 5.3.
+   Les valeurs par defaut decrivent le theme CLAIR ; elles sont
+   surchargees lorsque <html data-bs-theme="dark"> est actif.
+   Les feuilles legacy (default.css / formate.css / styles.css) restent
+   chargees en repli : les regles de neutralisation en fin de fichier
+   evitent qu'elles cassent les blocs deja migres.
+   ------------------------------------------------------------------ */
+:root {
+    --xnova-bs-bg: #f1f5f9;
+    --xnova-bs-surface: rgba(255, 255, 255, 0.94);
+    --xnova-bs-surface-strong: #ffffff;
+    --xnova-bs-surface-alt: rgba(241, 245, 249, 0.96);
+    --xnova-bs-surface-hover: rgba(226, 232, 240, 0.9);
+    --xnova-bs-border: rgba(15, 23, 42, 0.15);
+    --xnova-bs-text: #0f172a;
+    --xnova-bs-muted: #475569;
+    --xnova-bs-accent: #2563eb;
+    --xnova-bs-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    --xnova-bs-danger: #dc3545;
+}
+
+[data-bs-theme="dark"] {
+    --xnova-bs-bg: #0b1220;
+    --xnova-bs-surface: rgba(17, 24, 39, 0.92);
+    --xnova-bs-surface-strong: rgba(17, 24, 39, 0.98);
+    --xnova-bs-surface-alt: rgba(30, 41, 59, 0.95);
+    --xnova-bs-surface-hover: rgba(30, 41, 59, 0.82);
+    --xnova-bs-border: rgba(148, 163, 184, 0.28);
+    --xnova-bs-text: #e5e7eb;
+    --xnova-bs-muted: #cbd5e1;
+    --xnova-bs-accent: #60a5fa;
+    --xnova-bs-shadow: 0 10px 24px rgba(2, 6, 23, 0.4);
+    --xnova-bs-danger: #fca5a5;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    /* Neutralise formate.css / default.css qui forcent un fond sombre. */
+    color: var(--bs-body-color);
+    background-color: var(--bs-body-bg);
+}
+
+[data-bs-theme="dark"] body {
+    background-image: linear-gradient(180deg, #020817 0%, #091422 100%);
+    background-attachment: fixed;
+}
+
+body,
+input,
+select,
+textarea,
+button,
+.table,
+.list-group,
+.card,
+.navbar,
+.form-control,
+.form-select {
+    font-size: 0.92rem;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    color: var(--xnova-bs-accent);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--bs-link-hover-color);
+    text-decoration: none;
+}
+
+/* ------------------------------------------------------------------
+   Conteneurs de page (remplacent les anciens #main et <center>).
+   ------------------------------------------------------------------ */
+.xnova-shell {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.xnova-content {
+    min-width: 0;
+}
+
+.xnova-page {
+    padding: 1rem 0.75rem;
+    /* Fidelite au rendu legacy : les pages admin / messages etaient centrees. */
+    text-align: center;
+}
+
+/* Les tableaux legacy (width="519") se centraient via <center>. */
+.xnova-page > table,
+.xnova-page > form > table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.xnova-footer {
+    border-top: 1px solid var(--xnova-bs-border);
+    color: var(--xnova-bs-muted);
+}
+
+/* Rendu utilisee par renderMessage() (erreur / confirmation). */
+.xnova-message-card {
+    max-width: 560px;
+    margin: 2rem auto;
+    text-align: start;
+}
+
+/* ------------------------------------------------------------------
+   Page d'accueil (overview).
+   ------------------------------------------------------------------ */
+.xnova-overview-table > :not(caption) > * > * {
+    padding: 0.5rem 0.85rem;
+}
+
+.table .xnova-label {
+    font-weight: 600;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-overview-table th.xnova-label {
+    width: 32%;
+    max-width: 220px;
+}
+
+/* Formulaires de gestion de planete (renommer / abandonner). */
+.xnova-planet-form {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* En-tete de section a l'interieur d'un tableau Bootstrap
+   (.table .xnova-section : 2 classes, donc prioritaire sur la
+   neutralisation .table th / .table td ci-dessous). */
+.table .xnova-section {
+    background: var(--xnova-bs-surface-alt);
+    color: var(--xnova-bs-text);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------
+   Ressources / statistiques / records.
+   ------------------------------------------------------------------ */
+.xnova-panel {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: start;
+}
+
+/* Le panneau d'administration, lui, prend toute la largeur qui reste : ses rendus
+   portent la même classe que celles du jeu, et cette borne les centrait. La règle
+   est donc neutralisée **dans le panneau seulement** (`.xnova-admin`), pour ne pas
+   élargir les rendus du jeu ni les fenêtres à part. L'écart avec le menu vient de
+   la gouttière de la ligne (`g-3 g-xl-4`), pas d'une largeur fixe. */
+.xnova-admin .xnova-panel {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Onglets de la fiche joueur : la même hauteur pour tous, y compris quand la
+   liste affichée est vide (aucune flotte en vol, joueur sans planète). */
+.xnova-tab-body {
+    min-height: 26rem;
+}
+
+.xnova-resource-select {
+    min-width: 80px;
+}
+
+.xnova-stat-select {
+    min-width: 130px;
+}
+
+.xnova-progress {
+    height: 1.15rem;
+    background-color: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+}
+
+.xnova-progress .progress-bar {
+    font-size: 0.72rem;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.xnova-kv .col {
+    line-height: 1.35;
+}
+
+.xnova-mini-planet {
+    background: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+    transition: border-color 0.15s ease;
+}
+
+.xnova-mini-planet:hover {
+    border-color: var(--xnova-bs-accent);
+}
+
+.xnova-banner-input {
+    max-width: 420px;
+}
+
+.xnova-extern-chat img,
+.xnova-extern-chat iframe {
+    max-width: 100%;
+}
+
+/* ------------------------------------------------------------------
+   Batiments : file de construction + grille de rendus.
+   ------------------------------------------------------------------ */
+.xnova-queue {
+    border-bottom: 1px solid var(--xnova-bs-border);
+    text-align: start;
+}
+
+.xnova-queue:empty {
+    border-bottom: 0;
+}
+
+.xnova-queue-item {
+    background: var(--xnova-bs-surface);
+    color: var(--xnova-bs-text);
+    border-color: var(--xnova-bs-border);
+    /* Meme hauteur pour la liste rendue par le serveur (repli) et celle rendue
+       par le client : le passage de l'une a l'autre ne decale plus la page. */
+    min-height: 3rem;
+}
+
+/* Compteur de la file rendue par le client : chiffres a chasse fixe et largeur
+   reservee, pour que le decompte ne fasse pas bouger la ligne chaque seconde. */
+.xnova-queue-countdown {
+    min-width: 5.2rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Le compte a rebours est reecrit par InsertBuildListScript : le lien
+   d'annulation genere par le JS est remis en forme ici. Idem pour les
+   liens generes par buildings_script / buildings_research_script. */
+.xnova-countdown,
+#blc {
+    /* Une seule ligne (chiffres + lien) et chiffres a chasse fixe : le passage
+       de « 3/10 14:32:01 » a « 1:23:45 » ne change plus la taille du bloc. */
+    min-height: 1.6rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* InsertBuildListScript ecrit le lien sur une seconde ligne (<br>). On l'annule
+   ici : le bloc garde ainsi une hauteur constante (et la file reste compacte),
+   sans toucher aux fichiers legacy. */
+.xnova-countdown br,
+#blc br {
+    display: none;
+}
+
+.xnova-countdown a,
+#blc a,
+.xnova-hangar-info a {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--bs-danger);
+    border: 1px solid var(--bs-danger);
+    border-radius: 0.35rem;
+    text-decoration: none;
+}
+
+.xnova-countdown a:hover,
+#blc a:hover,
+.xnova-hangar-info a:hover {
+    color: #fff;
+    background-color: var(--bs-danger);
+}
+
+.xnova-building-card {
+    background: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+    transition: border-color 0.15s ease;
+}
+
+.xnova-building-card:hover {
+    border-color: var(--xnova-bs-accent);
+}
+
+.xnova-building-img {
+    background: var(--xnova-bs-surface-strong);
+}
+
+.xnova-building-action {
+    border-top: 1px solid var(--xnova-bs-border);
+    text-align: start;
+}
+
+/* ------------------------------------------------------------------
+   Chantier spatial / defense / recherche.
+   ------------------------------------------------------------------ */
+.xnova-shipyard,
+.xnova-research-grid,
+.xnova-hangar-info {
+    text-align: start;
+}
+
+.xnova-hangar-info select {
+    max-width: 420px;
+}
+
+/* ------------------------------------------------------------------
+   Barre de ressources (topnav).
+   ------------------------------------------------------------------ */
+.topnav-shell {
+    background: var(--xnova-bs-surface-strong);
+    border-bottom: 1px solid var(--xnova-bs-border);
+    box-shadow: var(--xnova-bs-shadow);
+}
+
+.xnova-planet-thumb {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+}
+
+.xnova-planet-select {
+    max-width: 260px;
+}
+
+.xnova-theme-toggle {
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Barre d'icônes (messages, notes, amis, thème) : placée au-dessus du choix de la
+   planète, les icônes suivantes s'y ajoutent. */
+.xnova-topnav-icons {
+    row-gap: 0.35rem;
+}
+
+.xnova-notif {
+    position: relative;
+}
+
+.xnova-notif-badge {
+    position: absolute;
+    top: -0.4rem;
+    inset-inline-end: -0.4rem;
+    min-width: 1.15rem;
+    padding: 0.1rem 0.28rem;
+    border-radius: 999px;
+    /* Rouge fixe : le rouge du thème clair est trop pâle pour un texte blanc. */
+    background: #b91c1c;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--xnova-bs-surface-strong);
+    /* Le badge ne doit pas intercepter le clic de son bouton. */
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------------
+   Rapport de combat (page autonome /game/rw, gabarits combat_report*).
+   ------------------------------------------------------------------ */
+.xnova-page-report {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding: 1rem;
+    /* La feuille legacy (formate.css) centre tout : le rapport se lit à gauche. */
+    text-align: start;
+}
+
+.xnova-battle-report .card-header {
+    gap: 0.5rem;
+}
+
+.xnova-battle-round {
+    padding: 0.75rem;
+    background: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.5rem;
+}
+
+.xnova-battle-round + .xnova-battle-round {
+    margin-top: 0.75rem;
+}
+
+.xnova-battle-round-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-battle-side .card-header {
+    background: var(--xnova-bs-surface-strong);
+    border-bottom: 1px solid var(--xnova-bs-border);
+}
+
+.xnova-battle-side table th {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-battle-shots {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    text-align: center;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-battle-shots > div + div {
+    margin-top: 0.15rem;
+}
+
+.xnova-battle-conclusion {
+    border-left: 0.35rem solid currentColor;
+}
+
+.xnova-battle-summary li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+}
+
+.xnova-battle-summary .xnova-battle-plunder {
+    font-weight: 600;
+}
+
+/* --- Rapport d'espionnage --- */
+.xnova-spy-report .card-header .badge {
+    font-weight: 500;
+}
+
+.xnova-spy-section .card-header {
+    letter-spacing: 0.01em;
+}
+
+.xnova-spy-section .table {
+    margin-bottom: 0;
+}
+
+.xnova-spy-section .table td {
+    padding: 0.15rem 0.6rem;
+    border: 0;
+}
+
+.xnova-spy-report .card-footer {
+    background: transparent;
+}
+
+/* --- Bouton « Rappeler » du bandeau des flottes --- */
+.xnova-fleets-recall {
+    margin: 0;
+}
+
+.xnova-fleets-recall-btn {
+    border: 1px solid currentColor;
+    border-radius: 0.75rem;
+    background: transparent;
+    color: inherit;
+    font-size: 0.75rem;
+    line-height: 1;
+    padding: 0.2rem 0.5rem;
+    opacity: 0.75;
+}
+
+.xnova-fleets-recall-btn:hover,
+.xnova-fleets-recall-btn:focus-visible {
+    opacity: 1;
+}
+
+/* --- Alerte d'attaque en approche (haut de page, collante) --- */
+/* Rouge plein et texte clair dans les deux thèmes : c'est le seul bloc qui doit
+   rester lisible même si l'univers est en thème sombre. */
+.xnova-alert {
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+    background: #b91c1c;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35);
+}
+
+.xnova-alert-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 1rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.xnova-alert-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.xnova-alert-title {
+    font-weight: 600;
+}
+
+.xnova-alert-hint {
+    font-weight: 400;
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
+
+.xnova-alert-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+    margin-left: auto;
+}
+
+.xnova-alert-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.xnova-alert-route,
+.xnova-alert-time {
+    white-space: nowrap;
+}
+
+.xnova-alert-countdown {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.resource-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 88px;
+    padding: 0.6rem 0.5rem;
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.65rem;
+    background: var(--xnova-bs-surface-alt);
+    color: var(--xnova-bs-text);
+    text-align: center;
+}
+
+.resource-pill img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.resource-pill .value {
+    font-weight: 700;
+    color: var(--xnova-bs-text);
+}
+
+.resource-pill .label {
+    font-size: 0.73rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+}
+
+/* ------------------------------------------------------------------
+   Menu lateral.
+   ------------------------------------------------------------------ */
+.left-menu {
+    width: 100%;
+    background: var(--xnova-bs-surface-strong);
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.9rem;
+    overflow: hidden;
+    box-shadow: var(--xnova-bs-shadow);
+}
+
+.left-menu .card-header {
+    background: var(--xnova-bs-surface-alt);
+    color: var(--xnova-bs-text);
+    border-bottom: 1px solid var(--xnova-bs-border);
+    padding: 0.9rem 0.75rem;
+    font-weight: 600;
+}
+
+.left-menu .list-group-item {
+    background: var(--xnova-bs-surface);
+    color: var(--xnova-bs-text);
+    border-color: var(--xnova-bs-border);
+    padding: 0.7rem 0.9rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.left-menu .list-group-item:hover,
+.left-menu .list-group-item:focus {
+    background: var(--xnova-bs-surface-hover);
+    color: var(--xnova-bs-text);
+}
+
+.left-menu .list-group-item.text-danger {
+    color: var(--xnova-bs-danger) !important;
+}
+
+.left-menu .section-label {
+    background: var(--xnova-bs-surface-alt);
+    color: var(--xnova-bs-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.65rem 0.9rem;
+    border-top: 1px solid var(--xnova-bs-border);
+    border-bottom: 1px solid var(--xnova-bs-border);
+}
+
+@media (min-width: 992px) {
+    .xnova-sidebar .left-menu {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Panneau latéral des files d'attente (App\Core\QueueBar) : la colonne
+   de droite du jeu, en vis-à-vis du menu de gauche. Quatre groupes
+   repliables (`<details>`), une ligne compacte par élément.
+   ------------------------------------------------------------------ */
+.xnova-queuebar {
+    min-width: 0;
+}
+
+.xnova-queuebar-card {
+    background: var(--xnova-bs-surface-strong);
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.5rem;
+    box-shadow: var(--xnova-bs-shadow);
+    overflow: hidden;
+}
+
+.xnova-queuebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--xnova-bs-surface-alt);
+    border-bottom: 1px solid var(--xnova-bs-border);
+}
+
+.xnova-queuebar-title {
+    font-weight: 600;
+}
+
+.xnova-queuebar-group + .xnova-queuebar-group {
+    border-top: 1px solid var(--xnova-bs-border);
+}
+
+.xnova-queuebar-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+    list-style: none;
+}
+
+.xnova-queuebar-summary::-webkit-details-marker {
+    display: none;
+}
+
+.xnova-queuebar-summary:hover {
+    background: var(--xnova-bs-surface-hover);
+    color: var(--xnova-bs-text);
+}
+
+/* Chevron dessiné : le marqueur natif est masqué, on garde un repère visuel. */
+.xnova-queuebar-summary > span:first-child::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-inline-end: 0.4rem;
+    border-top: 0.32rem solid currentColor;
+    border-inline: 0.28rem solid transparent;
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+}
+
+.xnova-queuebar-group[open] > .xnova-queuebar-summary > span:first-child::before {
+    transform: none;
+}
+
+.xnova-queuebar-list {
+    padding: 0 0.4rem 0.5rem;
+}
+
+/* Les lignes sont celles des files (QueueRenderer) : on resserre seulement leur
+   hauteur, la colonne étant étroite. Rien d'autre n'est redéfini — les actions,
+   la poignée et le décompte restent ceux des pages. */
+.xnova-queuebar-list .xnova-queue-item {
+    min-height: 0;
+    padding-block: 0.3rem;
+    font-size: 0.8125rem;
+}
+
+.xnova-queuebar-list .xnova-queue-countdown {
+    min-width: 4.4rem;
+}
+
+/* ------------------------------------------------------------------
+   La file est rendue dans le panneau de droite (App\Core\QueueBar) : sur
+   les pages d'origine (bâtiments, hangar, recherche), la liste restée
+   dans le gabarit est MASQUÉE, jamais supprimée. Le balisage reste la
+   source de vérité — il porte les actions, le glisser-déposer et le
+   décompte — et retirer cette classe rétablit l'affichage sur place.
+   ------------------------------------------------------------------ */
+.xnova-queue-source {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .xnova-queuebar .xnova-queuebar-card {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+.form-select,
+.form-control,
+.form-check-input,
+.btn {
+    border-radius: 0.5rem;
+}
+
+/* ------------------------------------------------------------------
+   Neutralisation des feuilles legacy.
+   styles.css embarque une copie de l'ancienne skin ; td.c / td.b / th
+   restent actifs pour les pages non converties mais ne doivent pas
+   casser les blocs deja passes sous Bootstrap.
+   ------------------------------------------------------------------ */
+img {
+    border: 0;
+}
+
+table {
+    color: inherit;
+}
+
+.table th,
+.table td,
+.table td.c,
+.table td.b,
+.table td.s,
+table.s th {
+    border-color: var(--bs-border-color);
+    background-color: transparent;
+    background-image: none;
+    opacity: 1;
+    font-size: inherit;
+    color: inherit;
+}
+
+.table > thead > tr > th,
+.table td.c {
+    font-weight: 600;
+}
+
+.alert,
+.card,
+.modal-content,
+.list-group {
+    color: var(--bs-body-color);
+}
+
+@media (max-width: 991.98px) {
+    .xnova-page {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Galaxie.
+   Le HTML est genere par app/Core/Legacy/GalaxyFunctions.php.
+   ------------------------------------------------------------------ */
+.xnova-galaxy {
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: start;
+}
+
+.xnova-galaxy-table > :not(caption) > * > * {
+    padding: 0.35rem 0.5rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.xnova-galaxy-table th[scope="col"] {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+    background: var(--xnova-bs-surface-alt);
+}
+
+.xnova-galaxy-pos {
+    width: 2.6rem;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-galaxy-pos a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.xnova-galaxy-table .xnova-galaxy-img {
+    height: 26px;
+    width: 26px;
+}
+
+/* Cellule "debris" : la couleur de fond encode la quantite. */
+.xnova-debris-cell {
+    background-image: none;
+}
+
+.xnova-galaxy-foot {
+    background: var(--xnova-bs-surface-alt);
+    font-size: 0.85rem;
+}
+
+.xnova-galaxy-foot .xnova-galaxy-stat {
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-galaxy-foot .xnova-galaxy-stat strong {
+    color: var(--xnova-bs-text);
+}
+
+/* Selecteur galaxie / systeme et selecteur de missiles. */
+.xnova-galaxy-selector .input-group {
+    max-width: 230px;
+}
+
+/* ------------------------------------------------------------------
+   Infobulles overlib (legacy) restylees.
+   Le contenu est genere par overlib(...) dans GalaxyFunctions.php :
+   les attributs y sont volontairement non quotes (le tout est imbrique
+   dans une chaine JS entre guillemets).
+   ------------------------------------------------------------------ */
+.overlib {
+    border-radius: 0.6rem;
+    box-shadow: var(--xnova-bs-shadow);
+}
+
+/* overlib genere ses cadres avec l'attribut bgcolor (#202427) : on
+   l'aligne sur la surface du theme courant pour eviter un liseré sombre. */
+#overDiv table[bgcolor] {
+    background-color: var(--xnova-bs-surface-strong);
+}
+
+#overDiv font[face] {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.xnova-tip {
+    min-width: 190px;
+    border-collapse: collapse;
+    background: var(--xnova-bs-surface-strong);
+    color: var(--xnova-bs-text);
+    font-size: 0.82rem;
+    text-align: start;
+}
+
+.xnova-tip .xnova-tip-head {
+    background: var(--xnova-bs-surface-alt);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.xnova-tip .xnova-tip-media {
+    padding: 0.25rem;
+    text-align: center;
+    vertical-align: top;
+}
+
+.xnova-tip .xnova-tip-body {
+    padding: 0.25rem 0.5rem;
+    text-align: start;
+    vertical-align: top;
+}
+
+.xnova-tip .xnova-tip-label {
+    padding: 0.15rem 0.5rem;
+    color: var(--xnova-bs-muted);
+    font-weight: 400;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.xnova-tip .xnova-tip-value {
+    padding: 0.15rem 0.5rem;
+    font-weight: 600;
+    text-align: end;
+}
+
+.xnova-tip th {
+    font-weight: 400;
+    color: var(--xnova-bs-muted);
+}
+
+.xnova-tip th.xnova-tip-value {
+    font-weight: 600;
+    color: var(--xnova-bs-text);
+}
+
+.xnova-tip .xnova-tip-sub {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.xnova-tip .xnova-tip-sub a {
+    white-space: nowrap;
+}
+
+.xnova-galaxy-table .xnova-action-icon {
+    vertical-align: middle;
+}
+
+/* ------------------------------------------------------------------
+   Alliance.
+   ------------------------------------------------------------------ */
+.xnova-ally-image {
+    display: block;
+    max-width: 100%;
+    margin: 0 auto 1rem;
+}
+
+.xnova-ally-inline-image {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Textes publics / internes de l'alliance (issus du BBCode [fc][/fc]). */
+.xnova-ally-text {
+    padding: 0.75rem 0.9rem;
+    background: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.5rem;
+    color: var(--xnova-bs-text);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.xnova-ally-text img {
+    max-width: 100%;
+    height: auto;
+}
+
+.xnova-ally-text a {
+    overflow-wrap: anywhere;
+}
+
+/* Ligne de regle (droits d'alliance) : cases a cocher compactes. */
+.xnova-ally-rights .form-check-input {
+    margin: 0;
+}
+
+.xnova-ally-rights-legend .list-group-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.xnova-rank-select {
+    max-width: 220px;
+}
+
+.xnova-circular-select {
+    max-width: 320px;
+}
+
+/* ------------------------------------------------------------------
+   Flotte.
+   Les classes .attack / .transport / ... viennent de public/xnova/default.css
+   avec des couleurs figees (lime / red / gold) : on les reprend avec les
+   variables Bootstrap pour qu'elles suivent le theme clair / sombre.
+   ------------------------------------------------------------------ */
+.attack,
+.espionage,
+.destroy,
+.missile,
+.federation,
+.owndestroy,
+.ownmissile,
+.ownfederation {
+    color: var(--bs-danger);
+}
+
+.transport,
+.deploy,
+.colony,
+.harvest,
+.ownattack,
+.owntransport,
+.owndeploy,
+.owncolony,
+.ownharvest {
+    color: var(--bs-success);
+}
+
+.hold,
+.ownhold {
+    color: var(--bs-info);
+}
+
+/* default.css forcait des liens quasi blancs (#E6EBFB) dans les lignes de
+   flotte : illisible en theme clair. Ici les liens suivent la couleur du
+   statut de la mission. */
+.flight a,
+.holding a,
+.return a {
+    color: inherit !important;
+}
+
+/* Tableaux de la flotte. */
+.xnova-fleet-table > :not(caption) > * > * {
+    padding: 0.4rem 0.5rem;
+}
+
+.xnova-fleet-table .xnova-fleet-countdown {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.xnova-fleet-form input[type="text"] {
+    max-width: 110px;
+}
+
+.xnova-fleet-select {
+    max-width: 120px;
+}
+
+.xnova-fleet-form .xnova-fleet-ship {
+    text-align: end;
+}
+
+.xnova-fleet-info .xnova-fleet-stat {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+}
+
+.xnova-fleet-info .xnova-fleet-stat .label {
+    color: var(--xnova-bs-muted);
+}
+
+/* Messages : menu de suppression et corps des messages. */
+.xnova-mess-select {
+    max-width: 320px;
+}
+
+.xnova-mess-body {
+    /* Rapports generes par le serveur : le HTML doit rester intact. */
+    overflow-wrap: anywhere;
+}
+
+/* Formulaires longs (options, notes...) : titres de section dans un rendu. */
+.xnova-form-section {
+    padding-bottom: 0.35rem;
+    margin: 1.5rem 0 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--xnova-bs-muted);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.xnova-form-section:first-child {
+    margin-top: 0;
+}
+
+/* Empire : matrice planetes x elements. */
+.xnova-imperium th.xnova-label {
+    white-space: nowrap;
+}
+
+.xnova-imperium .xnova-section {
+    text-align: start;
+}
+
+/* Tchat : zone des messages et smileys. */
+.xnova-shoutbox {
+    height: 305px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm, 0.25rem);
+    background-color: var(--bs-body-bg);
+}
+
+.xnova-shoutbox > div {
+    padding: 0.1rem 0;
+    border-bottom: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.08));
+}
+
+.xnova-shoutbox > div:last-child {
+    border-bottom: 0;
+}
+
+.xnova-smiley {
+    width: 12px;
+    height: 12px;
+    vertical-align: -2px;
+    cursor: pointer;
+}
+
+/* ------------------------------------------------------------------
+   Bandeau « flottes en vol » : ligne repliée en bas de toutes les pages
+   de jeu, panneau déroulant au-dessus (App\Core\FleetBar).
+   --xnova-fleets-offset est posé par le script : il vaut la hauteur de la
+   barre de debug quand elle est active, pour que les deux cohabitent.
+   ------------------------------------------------------------------ */
+.xnova-fleets {
+    position: fixed;
+    inset-inline: 0;
+    bottom: var(--xnova-fleets-offset, 0px);
+    z-index: 1070;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.8125rem;
+    pointer-events: none;
+}
+
+.xnova-fleets > * {
+    pointer-events: auto;
+}
+
+.xnova-fleets-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: min(100% - 1rem, 60rem);
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 0.5rem 0.75rem;
+    background: var(--xnova-bs-surface-strong);
+    color: var(--xnova-bs-text);
+    border: 1px solid var(--xnova-bs-border);
+    border-bottom: 0;
+    border-radius: 0.5rem 0.5rem 0 0;
+    box-shadow: var(--xnova-bs-shadow);
+}
+
+.xnova-fleets-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.75rem;
+    background: var(--xnova-bs-surface-strong);
+    color: var(--xnova-bs-text);
+    border: 1px solid var(--xnova-bs-border);
+    border-bottom: 0;
+    border-radius: 0.5rem 0.5rem 0 0;
+    cursor: pointer;
+}
+
+.xnova-fleets-toggle:hover {
+    background: var(--xnova-bs-surface-hover);
+}
+
+.xnova-fleets-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline-start: 0.4rem;
+    border-inline-start: 3px solid transparent;
+}
+
+.xnova-fleets-item-incoming {
+    border-inline-start-color: var(--xnova-bs-danger);
+}
+
+.xnova-fleets-route {
+    white-space: nowrap;
+}
+
+/* Détail des vaisseaux d'un vol : replié par défaut, ouvert au clic. On reste
+   dans le flux (pas de positionnement absolu) car le panneau défile : un
+   popover flottant serait rogné par son `overflow`. */
+.xnova-fleets-detail {
+    white-space: nowrap;
+}
+
+.xnova-fleets-ships {
+    cursor: pointer;
+    font-size: 0.85rem;
+    list-style: none;
+}
+
+.xnova-fleets-ships::marker,
+.xnova-fleets-ships::-webkit-details-marker {
+    content: "";
+    display: none;
+}
+
+.xnova-fleets-ships::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-inline-end: 0.35rem;
+    border-top: 0.32rem solid currentColor;
+    border-inline: 0.28rem solid transparent;
+    transition: transform 0.15s ease;
+}
+
+.xnova-fleets-detail[open] > .xnova-fleets-ships::before {
+    transform: rotate(180deg);
+}
+
+.xnova-fleets-ships-pop {
+    padding-block: 0.15rem;
+}
+
+.xnova-fleets-ships-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-inline-start: 1.1rem;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.xnova-fleets-ships-count {
+    color: var(--xnova-bs-text-muted, inherit);
+}
+
+.xnova-fleets-coords {
+    color: inherit;
+    text-decoration: none;
+}
+
+.xnova-fleets-coords:hover {
+    text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------
+   Boîte de réception : corps du message, quel que soit le type
+   (rapport de combat, retour de flotte, espionnage, alliance, admin...).
+   ------------------------------------------------------------------ */
+.xnova-message-body {
+    padding: 0.75rem 1rem;
+    background: var(--xnova-bs-surface-alt);
+    border: 1px solid var(--xnova-bs-border);
+    border-radius: 0.5rem;
+    /* Remplace le nl2br() historique : les sauts de ligne du message restent. */
+    white-space: pre-line;
+}
+
+.xnova-message-body table {
+    width: auto;
+    max-width: 100%;
+}
+
+.xnova-message-body td,
+.xnova-message-body th {
+    padding: 0.2rem 0.5rem;
+    border-color: var(--xnova-bs-border);
+}
+
+.xnova-message-body a {
+    color: var(--xnova-bs-accent);
+}
+
+/* Les anciens messages coloraient le texte en dur : on neutralise les teintes
+   qui disparaîtraient sur le thème sombre. */
+.xnova-message-body font[color="black"],
+.xnova-message-body font[color="#000000"],
+.xnova-message-body font[color="white"] {
+    color: inherit !important;
+}
+
+/* Décompte à chasse fixe et largeur réservée : la ligne ne bouge plus à
+   chaque seconde (même règle que les files d'attente). */ */
+.xnova-fleets-time {
+    margin-inline-start: auto;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.xnova-fleets-countdown {
+    display: inline-block;
+    min-width: 5.2rem;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+.xnova-fleets-chevron {
+    transition: transform 0.15s ease;
+}
+
+.xnova-fleets-open .xnova-fleets-chevron {
+    transform: rotate(180deg);
+}

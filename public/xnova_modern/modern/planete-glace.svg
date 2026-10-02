@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Planete de glace">
+	<defs>
+		<radialGradient id="xi-sphere" cx="33%" cy="26%" r="88%">
+			<stop offset="0" stop-color="#ffffff"/>
+			<stop offset="32%" stop-color="#bfe8f5"/>
+			<stop offset="70%" stop-color="#4a8fb5"/>
+			<stop offset="1" stop-color="#0d2740"/>
+		</radialGradient>
+		<clipPath id="xi-bord"><circle cx="64" cy="64" r="46"/></clipPath>
+	</defs>
+	<circle cx="64" cy="64" r="46" fill="url(#xi-sphere)"/>
+	<g clip-path="url(#xi-bord)" fill="none" stroke="#ffffff" stroke-linecap="round">
+		<path d="M30 40c14 6 26 4 44-4" stroke-width="2.2" opacity=".5"/>
+		<path d="M34 62c18 8 34 6 56-6" stroke-width="1.6" opacity=".35"/>
+		<path d="M42 84c16 6 30 4 44-6" stroke-width="2" opacity=".4"/>
+		<path d="M58 24c-4 16-2 30 6 46" stroke-width="1.4" opacity=".3"/>
+		<ellipse cx="64" cy="16" rx="34" ry="14" fill="#ffffff" opacity=".28" stroke="none"/>
+	</g>
+</svg>

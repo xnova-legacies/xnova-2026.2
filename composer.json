@@ -1,0 +1,43 @@
+{
+    "name": "xnova/xnova",
+    "description": "XNova game server",
+    "type": "project",
+    "license": "GPL-3.0-or-later",
+    "require-dev": {
+        "php-debugbar/php-debugbar": "^3.8",
+        "phpunit/phpunit": "^11.5",
+        "squizlabs/php_codesniffer": "^3.13"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "cs": "phpcs",
+        "cs:fix": "phpcbf",
+        "doublons": "php tools/audit-doublons.php",
+        "sql": "php tools/audit-sql.php"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform-check": false,
+        "platform": {
+            "php": "8.3.0",
+            "ext-pcntl": "8.3",
+            "ext-posix": "8.3"
+        }
+    },
+    "require": {
+        "php": ">=8.3",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "workerman/workerman": "^4.1"
+    }
+}

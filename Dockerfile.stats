@@ -1,0 +1,16 @@
+# Image dédiée à la mise à jour du classement : PHP en ligne de commande, sans
+# serveur web. Le service `stats` ne fait qu'une chose — lancer `db/stats.php` à
+# intervalle régulier — et n'a donc pas besoin d'Apache.
+FROM php:8.3-cli
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Le jeu se connecte par PDO (une seule connexion, partagée par tout le Coeur
+# d'application) : l'extension n'est pas compilée dans l'image CLI de base.
+RUN docker-php-ext-install pdo_mysql
+
+WORKDIR /var/www/html
+
+# Le code est monté par docker-compose (bind mount), comme pour `app` et `ws` :
+# l'image ne fournit que le runtime PHP du planificateur.
+CMD ["sh", "/var/www/html/db/stats-loop.sh"]

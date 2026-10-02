@@ -1,0 +1,11 @@
+# Branche en revue : cet environnement est un poste de travail jetable, pas une
+# integration. Il se comporte donc comme `local` (voir docker-compose.local.yml) :
+# la base vit dans un `tmpfs`, rien n'est ecrit sur le disque, et
+# `docker-entrypoint.sh` remet `configs/config.php` a zero au demarrage du conteneur,
+# ce qui ramene a l'installateur. Deux revues sur la meme machine restent separees :
+# chacune a ses propres conteneurs, il n'y a donc pas de volume a nommer.
+
+services:
+  db:
+    tmpfs:
+      - /var/lib/mysql

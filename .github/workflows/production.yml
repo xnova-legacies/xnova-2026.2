@@ -1,0 +1,73 @@
+# Environnement de **production** : une étiquette `v*` publiée **sur `main`**.
+#
+# Une étiquette ne porte pas la branche d'où elle vient, donc le travail le vérifie
+# lui-même : `main` porte les versions publiées, `develop` le travail en cours, et
+# une étiquette posée sur `develop` ne doit pas partir en production.
+# L'environnement GitHub `production` porte les règles de protection — une
+# approbation obligatoire, par exemple —, donc la publication attend le feu vert.
+name: Deploy Production
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  qualite:
+    uses: ./.github/workflows/_quality.yml
+
+  image:
+    name: Image de production
+    needs: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/pkgs/container/xnova-docker
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # L'étiquette est posée sur un commit : on construit exactement celui-là.
+      # L'historique complet est nécessaire pour situer ce commit par rapport à `main`.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Une étiquette posée sur `develop` ne part pas en production : c'est `main`
+      # qui porte les versions publiées. Le contrôle porte sur le commit visé, pas sur
+      # la branche poussée (une poussée d'étiquette n'en porte aucune).
+      - name: L'étiquette est-elle posée sur main ?
+        run: |
+          if ! git rev-parse --verify --quiet origin/main >/dev/null; then
+            echo "::error::La branche main est introuvable : impossible de situer l'étiquette."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::L'étiquette ${{ github.ref_name }} n'est pas posée sur main."
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

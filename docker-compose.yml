@@ -1,0 +1,99 @@
+services:
+  app:
+    build: .
+    deploy:
+      resources:
+        limits:
+          memory: 2g       # Maximum (Limite)
+        reservations:
+          memory: 1g     # Minimum (Réservation)
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    env_file:
+      - configs/.env.${APP_ENV:-local}
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:5.7
+    deploy:
+      resources:
+        limits:
+          memory: 2g       # Maximum (Limite)
+        reservations:
+          memory: 1g     # Minimum (Réservation)
+    ports:
+      - "3309:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - configs/.env.${APP_ENV:-local}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Transport temps réel : le navigateur ne parle qu'à ce canal, qui relaie les
+  # actions vers l'API HTTP de `app` (seule source de vérité) et pousse l'état.
+  ws:
+    build:
+      context: .
+      dockerfile: Dockerfile.ws
+    # Profil « websocket » : le service n'est lancé que si WS_ENABLED=1 (voir
+    # deploy.ps1). À 0, l'application reste sur l'API JSON et son polling.
+    deploy:
+      resources:
+        limits:
+          memory: 2g       # Maximum (Limite)
+        reservations:
+          memory: 1g     # Minimum (Réservation)
+    profiles:
+      - websocket
+    ports:
+      - "${WS_PORT:-8081}:8081"
+    volumes:
+      - ./:/var/www/html
+    env_file:
+      - configs/.env.${APP_ENV:-local}
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      WS_APP_URL: ${WS_APP_URL:-http://app}
+      WS_LISTEN: 0.0.0.0:8081
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # Mise à jour du classement : un conteneur qui ne fait que cela — lancer
+  # `db/stats.php` à intervalle régulier, sans serveur web. Profil « stats »,
+  # ajouté par deploy.ps1 sauf si STATS_ENABLED=0 dans configs/.env.<env>.
+  stats:
+    build:
+      context: .
+      dockerfile: Dockerfile.stats
+    deploy:
+      resources:
+        limits:
+          memory: 1g       # Maximum (Limite)
+        reservations:
+          memory: 512m     # Minimum (Réservation)
+    profiles:
+      - stats
+    volumes:
+      - ./:/var/www/html
+    env_file:
+      - configs/.env.${APP_ENV:-local}
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+    # STATS_INTERVAL est lu par le script depuis `configs/.env.<env>` : ne pas le
+    # déclarer ici, `environment:` a la priorité sur `env_file:` et la valeur du
+    # fichier serait ignorée.
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+

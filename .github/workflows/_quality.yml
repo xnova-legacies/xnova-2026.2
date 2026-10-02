@@ -1,0 +1,261 @@
+# Contrôles partagés par les trois environnements.
+#
+# Un seul endroit à corriger : `review`, `integration` et `production` appellent ce
+# fichier (`uses: ./.github/workflows/_quality.yml`), donc les trois vérifient
+# exactement la même chose et une règle ajoutée ici vaut pour les trois.
+#
+# Deux travaux :
+#   - `qualite` : manifeste composer, dépendances, **PHP 8.3 minimum**, style (phpcs),
+#     schéma (migrations du **Core de l'application** **et** des Modules, semis du registre),
+#     règle « une règle = une implémentation » (`tools/audit-doublons.php`), tests ;
+#   - `fumee` : la pile Docker se monte et les pages d'un univers neuf répondent sans
+#     erreur PHP (`tools/smoke.sh`) ;
+#   - `workflows` : les workflows eux-mêmes, lus par actionlint ;
+#   - `php-84` : les tests sur la version suivante du langage, sans bloquer personne.
+#
+# Tout est gratuit : image Docker publique pour l'un, actions du dépôt pour les autres.
+name: Qualité (partagée)
+
+on:
+  workflow_call:
+
+# Valeurs de la base ecrites **une seule fois**. Chaque travail qui touche MySQL s'en
+# sert pour ecrire le fichier d'environnement de l'application (`configs/.env.<APP_ENV>`),
+# parce que c'est **le fichier** qui porte la connexion : `xnova_env()` ne lit jamais les
+# variables du processus (il ne consulte le processus que pour `APP_ENV`).
+# `DB_HOST` est propre a chaque travail : `db` dans la pile Docker, `127.0.0.1` quand le
+# service MySQL est joint depuis le runner.
+env:
+  DB_NAME: xnova
+  DB_USER: xnova
+  DB_PASSWORD: xnova_password
+  DB_PREFIX: game_
+  MYSQL_ROOT_PASSWORD: xnova_root
+  MYSQL_DATABASE: xnova
+  MYSQL_USER: xnova
+  MYSQL_PASSWORD: xnova_password
+
+jobs:
+  qualite:
+    name: Contrôles (PHP 8.3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # MySQL 5.7, comme la production : le schéma du jeu est InnoDB/utf8mb3 et la suite
+    # lit le registre des modules (table `modules`), donc une base est nécessaire.
+    # MySQL 8 ne convient pas (le jeu vise 5.7).
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: xnova_root
+          MYSQL_DATABASE: xnova
+          MYSQL_USER: xnova
+          MYSQL_PASSWORD: xnova_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pxnova_root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    # La connexion vient du **fichier d'environnement** que l'etape « Schema » ecrit a partir
+    # des variables du fichier (voir `env` en tete de workflow) : le `configs/config.php`
+    # versionne est **vide** (c'est l'installateur qui l'ecrit).
+    env:
+      APP_ENV: local
+      DB_HOST: 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 8.3 — le plancher du jeu
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer — manifeste, dépendances, plateforme
+        run: |
+          composer validate --strict --no-check-publish
+          composer install --no-interaction --no-progress --prefer-dist
+          # Confronte les prérequis déclarés (plancher PHP 8.3, extension pdo_mysql) à l'interpréteur.
+          composer check-platform-reqs
+          # Dépendances connues comme vulnérables (base Packagist, gratuite).
+          composer audit
+
+      - name: Aucun marqueur de conflit laissé en place
+        run: |
+          if git grep -nE '^(<<<<<<<|>>>>>>>)' -- . ':!*.md'; then
+            echo 'Marqueur de conflit dans les sources.' >&2
+            exit 1
+          fi
+
+      - name: Style (phpcs) — `composer cs`
+        run: composer cs
+
+      - name: Fichier d'environnement de la base
+        run: env | grep -E '^(APP_ENV|DB_|MYSQL_)' > "configs/.env.$APP_ENV"
+
+      - name: Schéma — migrations du Core de l'application et des Modules, puis semis du registre
+        run: |
+          php db/migrate.php migrate
+          # Un `down` qui ne fonctionne pas est une fausse sécurité : on annule tout,
+          # puis on rejoue — sur une base jetable de l'intégration, jamais en production.
+          php db/migrate.php rollback 100 --force
+          php db/migrate.php migrate
+          php db/modules.php
+
+      - name: Une règle, une implémentation — `composer doublons`
+        run: composer doublons
+
+      # Rendu du terrain : aucune entrée (`$_GET`, `$_POST`…) ne doit entrer dans une
+      # requête. `--strict` échoue s'il en trouve une, la liste des sites à vérifier
+      # (requêtes construites) s'affiche sans bloquer.
+      - name: Requêtes SQL — `composer sql`
+        run: composer sql -- . --strict
+
+      - name: Tests — `composer test`
+        run: composer test
+
+  fumee:
+    name: Fumée HTTP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Le service MySQL de la pile, joint par le reseau Docker (les autres valeurs
+    # viennent de `env`, en tete de workflow).
+    env:
+      DB_HOST: db
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Les valeurs doivent être **les mêmes des deux côtés** : le service MySQL crée son
+      # compte avec `MYSQL_*`, et l'application se connecte avec ce que porte
+      # `configs/config.php` (le compte `xnova`, mot de passe `xnova_password`, hôte `db`,
+      # tous ceux du développement) — l'environnement ne surcharge que `DB_NAME`.
+      - name: Environnement de la pile
+        env:
+          APP_ENV: ci
+        run: env | grep -E '^(APP_ENV|DB_|MYSQL_)' > "configs/.env.$APP_ENV"
+
+      - name: Monter la pile
+        env:
+          APP_ENV: ci
+        run: docker compose up -d --build app
+
+      # Aucune page n'installe le jeu : une base neuve passe par les **migrations**
+      # (elles créent les tables et portent les réglages de la table `config`), puis par
+      # le semis du registre des modules. C'est le chemin de l'installateur, en ligne.
+      #
+      # Avant cela, on attend une connexion **réseau** : le contrôle de santé du compose
+      # interroge `localhost`, donc le **socket**, qui répond pendant l'initialisation de
+      # MySQL — assez pour lancer les migrations trop tôt et se faire refuser la connexion.
+      - name: Attendre que MySQL accepte le réseau
+        env:
+          APP_ENV: ci
+        run: |
+          for _ in $(seq 1 30); do
+            if docker compose exec -T app php -r 'try { new PDO("mysql:host=db;charset=utf8", "xnova", "xnova_password"); exit(0); } catch (Throwable $exception) { exit(1); }'; then
+              echo 'MySQL repond sur le reseau.'
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'MySQL injoignable apres 60 s.' >&2
+          exit 1
+
+      # Un seul chemin mène à la base de la revue : `db/demo.php` vide les tables,
+      # rejoue les migrations (Core de l'application **et** Modules), sème les registres
+      # (réglages, rôles, modules) et garnit un univers de démonstration — quatre comptes,
+      # dont un compte garni, mot de passe `demo`. La fumée vérifie donc des pages
+      # **remplies**, pas une base vide.
+      - name: Base neuve et univers de démonstration
+        env:
+          APP_ENV: ci
+        run: docker compose exec -T app php db/demo.php --force
+
+      - name: Fumée (`tools/smoke.sh`)
+        run: sh tools/smoke.sh http://localhost:8080
+
+      - name: Journaux du conteneur (si la fumée échoue)
+        if: failure()
+        env:
+          APP_ENV: ci
+        run: docker compose logs --no-color app
+
+  workflows:
+    name: Workflows (actionlint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Lit `.github/workflows/` (schéma GitHub Actions + YAML) : une faute de frappe
+      # dans un workflow ne se voit pas avant le premier déclenchement.
+      - name: actionlint
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest
+
+  php-84:
+    name: Essai PHP 8.4 (information)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Filet : même si une étape imprévue casse (installation, extension), le run reste
+    # vert. L'échec **attendu** — les tests — est traité plus bas en alerte.
+    continue-on-error: true
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: xnova_root
+          MYSQL_DATABASE: xnova
+          MYSQL_USER: xnova
+          MYSQL_PASSWORD: xnova_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pxnova_root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    env:
+      APP_ENV: local
+      DB_HOST: 127.0.0.1
+      DB_NAME: xnova
+      DB_USER: xnova
+      DB_PASSWORD: xnova_password
+      DB_PREFIX: game_
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 8.4 — la version suivante, pour le savoir tôt
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Meme remarque que le travail `qualite` : la connexion vient du fichier
+      # d'environnement, et le `configs/config.php` versionne est vide.
+      - name: Fichier d'environnement de la base
+        run: env | grep -E '^(APP_ENV|DB_|MYSQL_)' > "configs/.env.$APP_ENV"
+
+      # Un échec ici **n'arrête rien** : il devient une **alerte** (annotation jaune sur
+      # le run, avec le journal de l'étape pour le détail) au lieu d'une croix rouge.
+      # Le message est une information : le jeu vise PHP 8.3, on veut juste le savoir tôt.
+      - name: Tests (information, jamais bloquant)
+        run: |
+          if ! composer test; then
+            echo "::warning title=PHP 8.4::Les tests echouent sur PHP 8.4. Le jeu vise PHP 8.3 : rien n'est bloque, c'est une information pour anticiper."
+          fi

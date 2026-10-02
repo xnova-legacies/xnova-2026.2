@@ -1,0 +1,7 @@
+services:
+  db:
+    volumes:
+      - xnova_db_prod:/var/lib/mysql
+
+volumes:
+  xnova_db_prod:

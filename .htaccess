@@ -1,0 +1,40 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^(common|config)\.php$ - [F,L]
+    RewriteRule ^extension\.inc$ - [F,L]
+    RewriteRule ^\. - [F,L]
+
+    # Code applicatif, configuration, outillage et modules : jamais servis en
+    # direct. Les vues sont dans `app/View/`, donc couvertes par `app/`.
+    # (`configs/` contient les `.env` et la connexion à la base : un dossier
+    #  ordinaire n'est protégé par aucun réglage Apache, d'où cette règle.)
+    # Un dossier nouveau à la racine est public par défaut : l'ajouter ici, et
+    # doubler ses scripts d'une garde `PHP_SAPI !== 'cli'`.
+    #
+    # Seule exception dans `modules/` : les **assets web** d'un module
+    # (`modules/<nom>/assets/`). La liste d'extensions est fermée — un `.php`
+    # déposé là reste refusé (il s'exécuterait), tout comme un `.tpl` ou un `.mo`.
+    RewriteRule ^modules/[^/]+/assets/[^/]+\.(?:js|css|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|map)$ - [L]
+
+    RewriteRule ^(app|configs|db|tests|includes|modules|tools|mini-rts)/ - [F,L]
+    RewriteRule ^(composer\.(json|lock)|Dockerfile.*|docker-compose.*\.ya?ml|deploy\.ps1|test_game\.ps1)$ - [F,L]
+    RewriteRule \.(md|tpl|mo|inc|ya?ml|ps1|lock)$ - [F,L]
+    # Les assets de la barre de debug sont publics, pas le code du paquet.
+    RewriteRule ^vendor/.*\.php$ - [F,L]
+
+    # Les assets du thème vivaient dans `skins/` : les anciens liens (messages et
+    # rapports enregistrés, caches des navigateurs) continuent d'aboutir.
+    RewriteRule ^skins/(.*)$ /public/$1 [R=301,L]
+
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_FILENAME} !\.php$ [NC]
+    RewriteRule ^ - [L]
+
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [L]
+</IfModule>

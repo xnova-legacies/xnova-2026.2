@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Planete rocheuse">
+	<defs>
+		<radialGradient id="xr-sphere" cx="34%" cy="27%" r="86%">
+			<stop offset="0" stop-color="#f6e2c0"/>
+			<stop offset="34%" stop-color="#c99a5e"/>
+			<stop offset="72%" stop-color="#8a5f33"/>
+			<stop offset="1" stop-color="#2b190b"/>
+		</radialGradient>
+		<clipPath id="xr-bord"><circle cx="64" cy="64" r="46"/></clipPath>
+	</defs>
+	<circle cx="64" cy="64" r="46" fill="url(#xr-sphere)"/>
+	<g clip-path="url(#xr-bord)" opacity=".6">
+		<ellipse cx="60" cy="70" rx="30" ry="9" fill="#b98a53" opacity=".3"/>
+		<circle cx="45" cy="41" r="10" fill="#7d5730" opacity=".75"/>
+		<circle cx="43" cy="38" r="8" fill="#edd6ae" opacity=".45"/>
+		<circle cx="74" cy="33" r="5" fill="#6f4a26" opacity=".7"/>
+		<circle cx="53" cy="72" r="7" fill="#714b27" opacity=".7"/>
+		<circle cx="51" cy="70" r="5" fill="#dcbd8e" opacity=".35"/>
+		<circle cx="86" cy="57" r="4" fill="#6a4623" opacity=".65"/>
+	</g>
+</svg>
