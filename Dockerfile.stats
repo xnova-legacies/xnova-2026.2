@@ -1,7 +1,7 @@
 # Image dédiée à la mise à jour du classement : PHP en ligne de commande, sans
 # serveur web. Le service `stats` ne fait qu'une chose — lancer `db/stats.php` à
 # intervalle régulier — et n'a donc pas besoin d'Apache.
-FROM php:8.3-cli
+FROM php:8.5-cli
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
