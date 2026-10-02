@@ -83,20 +83,16 @@ fi
 
 # --- Adresse publique du canal temps réel ---
 #
-# Quand `WS_PUBLIC_URL` est vide, le client **déduit** l'adresse du canal : même hôte
-# que la page, port 8085. C'est juste sur un poste où les deux ports sont sur
-# `localhost` — faux dans un Codespace, où **chaque port porte son propre nom d'hôte**
-# (`…-8080.…` pour le jeu, `…-8085.…` pour le canal). Le navigateur visait donc un port
-# 8085 sur l'hôte du jeu, qui n'existe pas, et la bannière « Connexion temps réel
-# interrompue — nouvelle tentative en cours… » revenait sans fin.
+# Le navigateur rejoint le canal sur le même hôte que le jeu, via `/ws/`. Apache
+# relaie ensuite la connexion au service `ws` sur le réseau Docker. Ainsi, dans
+# Codespaces, le WebSocket utilise le port 8080 déjà authentifié et reçoit le cookie
+# de session du jeu (le port 8085 a un nom d'hôte et un contexte d'auth distincts).
 #
 # Le poste connaît son propre nom : on écrit donc l'adresse ici, et l'application la
-# publie dans la page (`<meta name="ws-url">`). Hors Codespace, on ne touche à rien —
-# l'adresse déduite est la bonne.
-ws_port=$(lire WS_PORT)
+# publie dans la page (`<meta name="ws-url">`).
 ws_url=''
 if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
-    ws_url="wss://${CODESPACE_NAME}-${ws_port:-8085}.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
+    ws_url="wss://${CODESPACE_NAME}-8080.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/ws/"
 fi
 
 # L'application lit cette variable dans son `env_file`, donc **à la création** de son

@@ -59,7 +59,7 @@ HTTP, il contient les mots de passe.
 |---|---|---|
 | `app` | Apache + PHP : le jeu, l'API, le panneau | 8080 |
 | `db` | MySQL 5.7 | interne |
-| `ws` | WebSocket (Workerman) — profil `websocket` | 8085 |
+| `ws` | WebSocket (Workerman) — profil `websocket`, relayé par Apache sur `/ws/` | 8085 |
 | `stats` | Recalcul du classement en boucle — profil `stats` | — |
 
 ### Les commandes
@@ -140,6 +140,9 @@ L'API HTTP reste la **seule source de vérité** — le service WebSocket relaie
 ne décide rien. Le canal est optionnel : `WS_ENABLED=0` dans
 `configs/.env.<environnement>` le désactive et tout continue de fonctionner en
 AJAX, puis en formulaires classiques.
+Le navigateur se connecte sur le même hôte que le jeu (`/ws/`) ; Apache relaie le
+canal vers le service `ws`. Cela conserve le cookie de session et évite le port
+Codespaces séparé, qui impose une authentification distincte.
 
 ## 🗂️ Architecture
 
