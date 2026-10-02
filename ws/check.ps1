@@ -1,6 +1,6 @@
 # Verification du canal temps reel (service ws).
 #
-#   .\ws\check.ps1                 # hote et ports par defaut (localhost:8080 / 8081)
+#   .\ws\check.ps1                 # hote et ports par defaut (localhost:8080 / 8085)
 #   .\ws\check.ps1 -WsPort 9001    # autre port WebSocket
 #
 # Le script se connecte au jeu, ouvre le canal avec le cookie de session, envoie
@@ -9,7 +9,7 @@
 param(
     [string]$AppUrl = 'http://localhost:8080',
     [string]$WsHost = 'localhost',
-    [int]$WsPort = 8081,
+    [int]$WsPort = 8085,
     [string]$Username = 'admin',
     [string]$Password = 'admin123',
     [int]$ListenMs = 8000

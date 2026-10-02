@@ -27,7 +27,7 @@
 	var pending = {};
 	var banner = null;
 
-	/** Adresse du canal : méta ws-url, sinon même hôte sur le port 8081. */
+	/** Adresse du canal : méta ws-url, sinon même hôte sur le port 8085. */
 	function config() {
 		var meta = document.querySelector('meta[name="ws-url"]');
 
@@ -37,7 +37,7 @@
 
 		var scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
-		return scheme + '//' + window.location.hostname + ':8081/';
+		return scheme + '//' + window.location.hostname + ':8085/';
 	}
 
 	function csrfToken() {

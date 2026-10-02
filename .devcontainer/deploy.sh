@@ -84,10 +84,10 @@ fi
 # --- Adresse publique du canal temps réel ---
 #
 # Quand `WS_PUBLIC_URL` est vide, le client **déduit** l'adresse du canal : même hôte
-# que la page, port 8081. C'est juste sur un poste où les deux ports sont sur
+# que la page, port 8085. C'est juste sur un poste où les deux ports sont sur
 # `localhost` — faux dans un Codespace, où **chaque port porte son propre nom d'hôte**
-# (`…-8080.…` pour le jeu, `…-8081.…` pour le canal). Le navigateur visait donc un port
-# 8081 sur l'hôte du jeu, qui n'existe pas, et la bannière « Connexion temps réel
+# (`…-8080.…` pour le jeu, `…-8085.…` pour le canal). Le navigateur visait donc un port
+# 8085 sur l'hôte du jeu, qui n'existe pas, et la bannière « Connexion temps réel
 # interrompue — nouvelle tentative en cours… » revenait sans fin.
 #
 # Le poste connaît son propre nom : on écrit donc l'adresse ici, et l'application la
@@ -96,7 +96,7 @@ fi
 ws_port=$(lire WS_PORT)
 ws_url=''
 if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
-    ws_url="wss://${CODESPACE_NAME}-${ws_port:-8081}.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
+    ws_url="wss://${CODESPACE_NAME}-${ws_port:-8085}.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
 fi
 
 # L'application lit cette variable dans son `env_file`, donc **à la création** de son
@@ -174,7 +174,7 @@ fi
 echo
 case "$(lire WS_ENABLED)" in
 1 | true | on | yes | oui)
-    echo "Canal temps reel : ${ws_url:-meme hote que la page, port ${ws_port:-8081}}"
+    echo "Canal temps reel : ${ws_url:-meme hote que la page, port ${ws_port:-8085}}"
     ;;
 *)
     echo 'Canal temps reel : desactive (WS_ENABLED=0), le jeu passe par l API JSON.'

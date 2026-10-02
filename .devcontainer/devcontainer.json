@@ -32,9 +32,9 @@
     "storage": "32gb"
   },
 
-  // 8080 : le jeu. 8081 : le canal temps réel (service `ws`, profil `websocket`).
+  // 8080 : le jeu. 8085 : le canal temps réel (service `ws`, profil `websocket`).
   // 3309 : MySQL, si tu veux y brancher un client.
-  "forwardPorts": [8080, 8081, 3309],
+  "forwardPorts": [8080, 8085, 3309],
   "portsAttributes": {
     "8080": {
       "label": "Le jeu (app)",
@@ -43,7 +43,7 @@
       // quand quelque chose écoutera vraiment.
       "onAutoForward": "notify"
     },
-    "8081": {
+    "8085": {
       "label": "Temps réel (ws)",
       "onAutoForward": "silent"
     },

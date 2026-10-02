@@ -59,7 +59,7 @@ HTTP, il contient les mots de passe.
 |---|---|---|
 | `app` | Apache + PHP : le jeu, l'API, le panneau | 8080 |
 | `db` | MySQL 5.7 | interne |
-| `ws` | WebSocket (Workerman) — profil `websocket` | 8081 |
+| `ws` | WebSocket (Workerman) — profil `websocket` | 8085 |
 | `stats` | Recalcul du classement en boucle — profil `stats` | — |
 
 ### Les commandes

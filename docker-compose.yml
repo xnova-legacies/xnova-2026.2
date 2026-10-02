@@ -55,7 +55,7 @@ services:
     profiles:
       - websocket
     ports:
-      - "${WS_PORT:-8081}:8081"
+      - "${WS_PORT:-8085}:8085"
     volumes:
       - ./:/var/www/html
     env_file:
@@ -63,7 +63,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-local}
       WS_APP_URL: ${WS_APP_URL:-http://app}
-      WS_LISTEN: 0.0.0.0:8081
+      WS_LISTEN: 0.0.0.0:8085
     depends_on:
       - app
     restart: unless-stopped
@@ -96,4 +96,3 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-

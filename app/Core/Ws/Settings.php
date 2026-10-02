@@ -33,7 +33,7 @@ final class Settings
 
     /**
      * URL publique du canal, telle que vue par le navigateur. Vide = déduite
-     * côté client (même hôte, port 8081).
+     * côté client (même hôte, port 8085).
      */
     public static function publicUrl(): string
     {

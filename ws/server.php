@@ -28,7 +28,7 @@ use Workerman\Timer;
 use Workerman\Worker;
 
 $appUrl = rtrim((string) (getenv('WS_APP_URL') ?: 'http://app'), '/');
-$listen = (string) (getenv('WS_LISTEN') ?: '0.0.0.0:8081');
+$listen = (string) (getenv('WS_LISTEN') ?: '0.0.0.0:8085');
 $allowedOrigin = trim((string) (getenv('WS_ALLOWED_ORIGIN') ?: ''));
 $pollSeconds = max(0.5, ((int) (getenv('WS_POLL_MS') ?: 1000)) / 1000);
 $apiTimeout = max(1, (int) (getenv('WS_API_TIMEOUT') ?: 5));
@@ -183,6 +183,15 @@ function pushIfChanged(
 $worker = new Worker('websocket://' . $listen);
 $worker->name = 'xnova-ws';
 $worker->count = 1;
+$worker->onWorkerStart = function (Worker $worker) use ($listen, $appUrl): void {
+    Worker::log('xnova-ws : écoute sur ' . $listen . ' -> ' . $appUrl);
+
+    if (!Settings::enabled()) {
+        // Le compose ne démarre ce service que par profil, mais un lancement manuel
+        // reste possible : on signale simplement que le navigateur ne l'utilisera pas.
+        Worker::log('xnova-ws : WS_ENABLED=0, le navigateur utilise le repli HTTP.');
+    }
+};
 
 $worker->onWebSocketConnect = function (TcpConnection $connection, $header) use (
     &$contexts,
@@ -434,13 +443,5 @@ $worker->onClose = function (TcpConnection $connection) use (&$contexts): void {
 
     unset($contexts[$connection->id]);
 };
-
-Worker::log('xnova-ws : écoute sur ' . $listen . ' -> ' . $appUrl);
-
-if (!Settings::enabled()) {
-    // Le compose ne démarre ce service que par profil, mais un lancement manuel
-    // reste possible : on signale simplement que le navigateur ne l'utilisera pas.
-    Worker::log('xnova-ws : WS_ENABLED=0, le navigateur utilise le repli HTTP.');
-}
 
 Worker::runAll();
