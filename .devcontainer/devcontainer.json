@@ -1,0 +1,73 @@
+// Un poste de travail jetable, dans le nuage : le jeu complet, sa base et son
+// navigateur, sans rien installer — le pendant de `deploy.ps1` sur un poste Windows,
+// en shell.
+//
+// Ce qu'un Codespace **n'est pas** : un runner. Les contrôles de `.github/workflows`
+// continuent de tourner chez GitHub, sur une machine neuve à chaque fois. Ici, c'est
+// un humain qui joue, et la machine survit d'une session à l'autre.
+//
+// Le poste est porté par le **Coeur**, pas par chaque module : un module vit dans
+// `modules/` du Cœur, il se teste donc ici — exactement ce que fait le workflow du
+// module, qui pose ses fichiers dans un checkout du Cœur avant de lancer les contrôles.
+{
+  "name": "XNova — le jeu et sa pile",
+
+  // Debian et l'outillage de poste (git, sudo, un utilisateur qui n'est pas `root`).
+  // Le PHP du jeu n'est **pas** ici : il vit dans l'image du dépôt (`Dockerfile`),
+  // celle que la pile construit — la même qu'en production, avec `pdo_mysql` et
+  // Apache. C'est la règle du README : Docker Desktop suffit, rien d'autre à installer.
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+  "features": {
+    // Le jeu monte `app` et `db` par `docker compose` : il faut donc un démon Docker
+    // **dans** le poste, puisque c'est là que tourne le terminal qui le lance.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  // La pile réserve 2 Go à `app` et 2 Go à `db` : sur un format 2 cœurs / 8 Go — le
+  // standard — elle tient. 4 cœurs rendent les contrôles plus agréables.
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  // 8080 : le jeu. 8081 : le canal temps réel (service `ws`, profil `websocket`).
+  // 3309 : MySQL, si tu veux y brancher un client.
+  "forwardPorts": [8080, 8081, 3309],
+  "portsAttributes": {
+    "8080": {
+      "label": "Le jeu (app)",
+      // Pas d'ouverture automatique : la page ne répond qu'une fois la pile montée,
+      // et c'est pendant l'amorçage que le poste la monte. La notification viendra
+      // quand quelque chose écoutera vraiment.
+      "onAutoForward": "notify"
+    },
+    "8081": {
+      "label": "Temps réel (ws)",
+      "onAutoForward": "silent"
+    },
+    "3309": {
+      "label": "MySQL",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // À la création (dépôt fraîchement cloné) : fichier d'environnement, dépendances
+  // Composer, construction et démarrage de la pile, puis attente de MySQL.
+  "postCreateCommand": "sh .devcontainer/deploy.sh creer",
+
+  // À chaque redémarrage : la machine s'arrête, la pile aussi. Le disque, lui, survit
+  // — il n'y a rien à refaire, seulement à remonter.
+  "postStartCommand": "sh .devcontainer/deploy.sh relancer",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Le PHP du jeu n'est pas sur le poste : les classes, les gabarits et l'API se
+        // lisent donc dans le code source, pas par un interpréteur local.
+        "bmewburn.vscode-intelephense-client"
+      ]
+    }
+  }
+}
