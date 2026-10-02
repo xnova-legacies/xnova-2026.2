@@ -114,13 +114,34 @@ final class Migrator
     /**
      * Migrations restant à appliquer. Fonction pure.
      *
+     * `$module` restreint le plan à **un** module : les migrations d'un module portent
+     * un nom qualifié (`alliance/001_alliance`), donc seules celles-là sont retenues.
+     * C'est le plan que joue l'installation d'un module téléversé, qui ne doit toucher
+     * ni au schéma du Coeur d'application ni à celui d'un autre module.
+     *
      * @param array<string, string> $available
      * @param list<string>          $applied
      * @return array<string, string>
      */
-    public static function plan(array $available, array $applied): array
+    public static function plan(array $available, array $applied, string $module = ''): array
     {
-        return array_diff_key($available, array_flip($applied));
+        $pending = array_diff_key($available, array_flip($applied));
+
+        if ($module === '') {
+            return $pending;
+        }
+
+        // Le préfixe s'arrête au nom : `alliance` ne retient pas `alliance2/…`.
+        $prefix = $module . '/';
+        $only = array();
+
+        foreach ($pending as $name => $file) {
+            if (str_starts_with((string) $name, $prefix)) {
+                $only[$name] = $file;
+            }
+        }
+
+        return $only;
     }
 
     /**
@@ -226,17 +247,19 @@ final class Migrator
     /**
      * Applique les migrations en attente.
      *
-     * `$dryRun` se contente de lister ce qui serait joué. Une migration qui ne
+     * `$dryRun` se contente de lister ce qui serait joué. `$module` restreint le travail
+     * à ce module (voir `plan()`) : c'est ce que fait l'installation d'un module
+     * téléversé, dont le schéma doit arriver avec ses fichiers. Une migration qui ne
      * contient que du DML est enveloppée dans une transaction (voir la limite
      * MyISAM en tête de classe).
      *
      * @return list<string> noms appliqués (ou à appliquer en simulation)
      */
-    public function run(bool $dryRun = false): array
+    public function run(bool $dryRun = false, string $module = ''): array
     {
         $this->ensureTable();
 
-        $pending = self::plan($this->available(), $this->applied());
+        $pending = self::plan($this->available(), $this->applied(), $module);
         $done = array();
 
         foreach ($pending as $name => $file) {

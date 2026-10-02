@@ -341,7 +341,18 @@ final class ModulesController extends AdminController
         $sha256 = trim((string) @file_get_contents($staging . DIRECTORY_SEPARATOR . '.sha256'));
         $result = $service->install($staging, $name, $sha256, $force);
 
-        return $this->message($lang, $result['installed'] ? 'mod_upload_installed' : $result['refusal'], $result['installed'] ? 'green' : 'red');
+        if (!$result['installed']) {
+            return $this->message($lang, $result['refusal'], 'red');
+        }
+
+        // Le service joue le schéma du module une fois posé : un échec n'annule pas
+        // l'installation — les fichiers sont en place — mais il se dit, sinon le module
+        // répondrait des 500 « table inexistante » sans que rien ne l'annonce.
+        if (($result['migration_error'] ?? '') !== '') {
+            return $this->message($lang, 'mod_upload_migrate_failed', 'red');
+        }
+
+        return $this->message($lang, 'mod_upload_installed', 'green');
     }
 
     /** Message d'erreur de cette page, avec retour sur la liste. */

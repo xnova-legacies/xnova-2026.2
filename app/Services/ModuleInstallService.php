@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Core\Modules;
 use App\Core\ModuleScan;
+use App\Database\Migrator;
 
 /**
  * Installation d'un module téléversé.
@@ -24,6 +25,10 @@ use App\Core\ModuleScan;
  *    alertes n'empêchent pas (`$force` dit que l'administrateur les a lues), et
  *    l'empreinte SHA-256 de l'archive est alors conservée à côté du module, pour
  *    pouvoir dire plus tard si le dossier installé est bien celui qui a été analysé.
+ *
+ * Le module une fois en place, ses **migrations** sont jouées — les siennes seulement —
+ * pour que son schéma arrive avec ses fichiers : sans elles, le module serait allumé et
+ * ses pages répondraient une erreur 500 « table inexistante ».
  *
  * Rien n'est jamais écrasé : un nom déjà pris est refusé, comme l'archivage refuse
  * d'écraser une archive existante.
@@ -143,9 +148,9 @@ final class ModuleInstallService
     }
 
     /**
-     * Installe le module préparé en quarantaine.
+     * Installe le module préparé en quarantaine, puis joue son schéma.
      *
-     * @return array{installed: bool, refusal: string}
+     * @return array{installed: bool, refusal: string, migrations?: list<string>, migration_error?: string}
      */
     public function install(string $staging, string $name, string $sha256, bool $force = false): array
     {
@@ -186,11 +191,46 @@ final class ModuleInstallService
             @file_put_contents($target . DIRECTORY_SEPARATOR . '.sha256', $sha256 . "\n");
         }
 
+        // Les deux caches qui décrivent le catalogue ont été remplis **avant** ce
+        // déplacement (le contrôle « nom déjà pris », plus haut, lit `Modules`) : sans
+        // cette purge, le module fraîchement posé n'existe pour personne — ni pour le
+        // semis du registre, ni pour le migrateur, qui énumère les migrations de
+        // `modules/<nom>/` à partir du catalogue. Mesuré : sans elle, l'installation
+        // réussit, le module n'est pas déclaré et son schéma n'est jamais joué.
+        Modules::clearCache();
+        ModuleService::clearCache();
+
         // Le catalogue des modules le découvre au prochain chargement : le semis
         // s'occupe de le déclarer, il n'y a rien à écrire en base ici.
         $this->modules->seedDefaults();
 
-        return array('installed' => true, 'refusal' => '');
+        // Son **schéma** dans la foulée : sans lui, le module serait allumé mais ses pages
+        // répondraient une erreur 500, et c'est l'administrateur qui devait y penser
+        // (« puis ses migrations », disait le panneau).
+        //
+        // Le migrateur est **ciblé sur ce module** : installer une alliance ne joue ni le
+        // schéma du Coeur d'application ni celui d'un autre module — ceux-là restent des
+        // gestes distincts et visibles (voir `UpdateService`).
+        $migrations = array();
+        $migrationError = '';
+
+        try {
+            $migrations = (new Migrator())->run(false, $name);
+        } catch (\Throwable $exception) {
+            // Les fichiers sont en place et le module déclaré : l'installation a réussi,
+            // on ne la défait pas. Le schéma peut être rejoué après correction
+            // (`db/migrate.php migrate`), mais il faut le dire — et le journal porte le
+            // détail, jamais le panneau.
+            $migrationError = $exception->getMessage();
+            error_log('[xnova-module] migrations de ' . $name . ' : ' . $migrationError);
+        }
+
+        return array(
+            'installed' => true,
+            'refusal' => '',
+            'migrations' => $migrations,
+            'migration_error' => $migrationError,
+        );
     }
 
     /** Quarantaine : `modules/.archive/.upload`, jamais découverte comme module. */

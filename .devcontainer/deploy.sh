@@ -206,4 +206,10 @@ echo 'INSTALL_ADMIN_* du fichier d environnement.'
 #     sh tools/smoke.sh http://localhost:8080
 #
 #   Un module à éprouver ici : copier ses fichiers dans `modules/<nom>/` (c'est ce que
-#   fait son propre workflow), puis `docker compose exec -T app php db/modules.php`.
+#   fait son propre workflow), **puis** jouer son schéma — les deux gestes sont
+#   distincts, et sans le second ses pages répondent « table inexistante » :
+#     docker compose exec -T app php db/migrate.php migrate
+#     docker compose exec -T app php db/modules.php
+#
+#   L'installation par le panneau enchaîne les deux : l'archive analysée puis installée
+#   voit son schéma joué dans la foulée (`ModuleInstallService::install`).
