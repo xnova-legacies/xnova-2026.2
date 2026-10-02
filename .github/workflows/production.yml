@@ -36,7 +36,7 @@ jobs:
     steps:
       # L'étiquette est posée sur un commit : on construit exactement celui-là.
       # L'historique complet est nécessaire pour situer ce commit par rapport à `main`.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

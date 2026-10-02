@@ -68,7 +68,7 @@ jobs:
       DB_HOST: 127.0.0.1
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: PHP 8.3 — le plancher du jeu
         uses: shivammathur/setup-php@v2
@@ -132,7 +132,7 @@ jobs:
       DB_HOST: db
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Les valeurs doivent être **les mêmes des deux côtés** : le service MySQL crée son
       # compte avec `MYSQL_*`, et l'application se connecte avec ce que porte
@@ -194,7 +194,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Lit `.github/workflows/` (schéma GitHub Actions + YAML) : une faute de frappe
       # dans un workflow ne se voit pas avant le premier déclenchement.
@@ -234,7 +234,7 @@ jobs:
       DB_PASSWORD: xnova_password
       DB_PREFIX: game_
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: PHP 8.4 — la version suivante, pour le savoir tôt
         uses: shivammathur/setup-php@v2
