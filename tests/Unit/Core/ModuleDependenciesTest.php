@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Core;
 
 use App\Core\Modules;
+use App\Core\Project;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -134,6 +135,13 @@ différentes, pas un remplacement.
             self::markTestSkipped('Aucun module déposé : rien à déclarer dans la version livrée.');
         }
 
+        // La version éprouvée est celle du **Coeur installé**, jamais une valeur figée : une
+        // contrainte est satisfaite, ou non, par le Coeur qu'on a sous la main. Ce test
+        // dormait tant qu'aucun module n'était déposé (`markTestSkipped` ci-dessus), et le
+        // `2026.6` gelé ici est devenu faux dès que le Coeur a été numéroté `1.0.x` — un
+        // millésime est toujours plus ancien qu'un numéro (voir `coreSatisfies()`).
+        $coreVersion = Project::version();
+
         foreach (Modules::names() as $name) {
             $dependencies = Modules::dependencies($name);
 
@@ -141,11 +149,11 @@ différentes, pas un remplacement.
             self::assertMatchesRegularExpression(
                 '/^(>=|<=|>|<|=)?\s*\d+(\.\d+)*$/',
                 (string) $dependencies['core'],
-                $name . ' déclare une contrainte de version lisible (exemple : >=2026.6).'
+                $name . ' déclare une contrainte de version lisible (exemple : >=' . $coreVersion . ').'
             );
             self::assertTrue(
-                Modules::coreSatisfies('2026.6', (string) $dependencies['core']),
-                $name . ' exige un Coeur d\'application que cette version (' . '2026.6' . ') ne satisfait pas.'
+                Modules::coreSatisfies($coreVersion, (string) $dependencies['core']),
+                $name . ' exige un Coeur d\'application que cette version (' . $coreVersion . ') ne satisfait pas.'
             );
 
             foreach ((array) $dependencies['modules'] as $required) {
