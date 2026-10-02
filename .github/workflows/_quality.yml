@@ -4,14 +4,15 @@
 # fichier (`uses: ./.github/workflows/_quality.yml`), donc les trois vérifient
 # exactement la même chose et une règle ajoutée ici vaut pour les trois.
 #
-# Deux travaux :
+# Cinq travaux :
 #   - `qualite` : manifeste composer, dépendances, **PHP 8.3 minimum**, style (phpcs),
 #     schéma (migrations du **Core de l'application** **et** des Modules, semis du registre),
 #     règle « une règle = une implémentation » (`tools/audit-doublons.php`), tests ;
 #   - `fumee` : la pile Docker se monte et les pages d'un univers neuf répondent sans
 #     erreur PHP (`tools/smoke.sh`) ;
 #   - `workflows` : les workflows eux-mêmes, lus par actionlint ;
-#   - `php-84` : les tests sur la version suivante du langage, sans bloquer personne.
+#   - `php-84` et `php-85` : les tests sur les versions **plus récentes que le plancher**,
+#     sans bloquer personne.
 #
 # Tout est gratuit : image Docker publique pour l'un, actions du dépôt pour les autres.
 name: Qualité (partagée)
@@ -258,4 +259,61 @@ jobs:
         run: |
           if ! composer test; then
             echo "::warning title=PHP 8.4::Les tests echouent sur PHP 8.4. Le jeu vise PHP 8.3 : rien n'est bloque, c'est une information pour anticiper."
+          fi
+
+  # Même travail que `php-84`, un cran plus haut : 8.4 est désormais celle d'avant, 8.5
+  # celle du moment. Le jeu vise toujours PHP 8.3, donc un échec ici reste une information.
+  php-85:
+    name: Essai PHP 8.5 (information)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Filet : même si une étape imprévue casse (installation, extension), le run reste
+    # vert. L'échec **attendu** — les tests — est traité plus bas en alerte.
+    continue-on-error: true
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: xnova_root
+          MYSQL_DATABASE: xnova
+          MYSQL_USER: xnova
+          MYSQL_PASSWORD: xnova_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pxnova_root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    env:
+      APP_ENV: local
+      DB_HOST: 127.0.0.1
+      DB_NAME: xnova
+      DB_USER: xnova
+      DB_PASSWORD: xnova_password
+      DB_PREFIX: game_
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: PHP 8.5 — la version du moment, pour le savoir tôt
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Meme remarque que le travail `qualite` : la connexion vient du fichier
+      # d'environnement, et le `configs/config.php` versionne est vide.
+      - name: Fichier d'environnement de la base
+        run: env | grep -E '^(APP_ENV|DB_|MYSQL_)' > "configs/.env.$APP_ENV"
+
+      - name: Tests (information, jamais bloquant)
+        run: |
+          if ! composer test; then
+            echo "::warning title=PHP 8.5::Les tests echouent sur PHP 8.5. Le jeu vise PHP 8.3 : rien n'est bloque, c'est une information pour anticiper."
           fi
