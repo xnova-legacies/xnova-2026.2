@@ -28,6 +28,29 @@ cd "$(dirname "$0")/.."
 ENV_FILE=configs/.env.local
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.local.yml"
 
+# Lire, ou poser, une variable du fichier d'environnement. `poser` remplace la ligne si
+# elle existe et l'ajoute sinon : rejouable, sans doublon, et le reste du fichier — ses
+# commentaires compris — est recopié tel quel.
+lire() {
+    sed -n "s/^$1=//p" "$ENV_FILE" | head -n 1
+}
+
+poser() {
+    ligne="$1=$2"
+
+    if grep -q "^$1=" "$ENV_FILE"; then
+        while IFS= read -r actuelle || [ -n "$actuelle" ]; do
+            case "$actuelle" in
+            "$1="*) printf '%s\n' "$ligne" ;;
+            *) printf '%s\n' "$actuelle" ;;
+            esac
+        done < "$ENV_FILE" > "$ENV_FILE.tmp"
+        mv "$ENV_FILE.tmp" "$ENV_FILE"
+    else
+        printf '%s\n' "$ligne" >> "$ENV_FILE"
+    fi
+}
+
 # Le démon Docker vit dans ce poste (voir `devcontainer.json`) et démarre avec lui :
 # à notre tour, il peut n'être pas encore prêt. On l'attend, plutôt que de s'arrêter
 # sur un « cannot connect to the Docker daemon ».
@@ -58,16 +81,56 @@ if [ ! -f .env ]; then
     printf 'APP_ENV=local\n' > .env
 fi
 
+# --- Adresse publique du canal temps réel ---
+#
+# Quand `WS_PUBLIC_URL` est vide, le client **déduit** l'adresse du canal : même hôte
+# que la page, port 8081. C'est juste sur un poste où les deux ports sont sur
+# `localhost` — faux dans un Codespace, où **chaque port porte son propre nom d'hôte**
+# (`…-8080.…` pour le jeu, `…-8081.…` pour le canal). Le navigateur visait donc un port
+# 8081 sur l'hôte du jeu, qui n'existe pas, et la bannière « Connexion temps réel
+# interrompue — nouvelle tentative en cours… » revenait sans fin.
+#
+# Le poste connaît son propre nom : on écrit donc l'adresse ici, et l'application la
+# publie dans la page (`<meta name="ws-url">`). Hors Codespace, on ne touche à rien —
+# l'adresse déduite est la bonne.
+ws_port=$(lire WS_PORT)
+ws_url=''
+if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
+    ws_url="wss://${CODESPACE_NAME}-${ws_port:-8081}.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
+fi
+
+# L'application lit cette variable dans son `env_file`, donc **à la création** de son
+# conteneur : un `up -d` ne relit pas un fichier d'environnement modifié. Si la valeur
+# change — poste créé avant ce réglage, ou nom de poste différent — il faut recréer.
+recreer=''
+if [ "$(lire WS_PUBLIC_URL)" != "$ws_url" ]; then
+    recreer='--force-recreate'
+    poser WS_PUBLIC_URL "$ws_url"
+fi
+
+# Les services à profil ne démarrent que si le fichier d'environnement les demande :
+# c'est la règle de `deploy.ps1`, pour qu'un poste se règle comme n'importe quel
+# environnement. `WS_ENABLED=0` (repli sur l'API JSON) ou `STATS_ENABLED=0` (plus de
+# recalcul du classement en boucle) suffisent donc à alléger le poste.
+profils=''
+case "$(lire WS_ENABLED)" in
+1 | true | on | yes | oui) profils='--profile websocket' ;;
+esac
+case "$(lire STATS_ENABLED)" in
+0 | false | off | no | non) ;;
+*) profils="$profils --profile stats" ;;
+esac
+
 if [ "$MODE" = creer ]; then
-    # `--build` : c'est la première fois, l'image du jeu n'existe pas encore. Les
-    # services à profil (`ws`, `stats`) ne démarrent pas : le jeu retombe sur son API
-    # JSON, et un poste de test n'a pas besoin d'un recalcul de classement en boucle.
+    # `--build` : c'est la première fois, l'image du jeu n'existe pas encore.
     echo 'Construction et demarrage de la pile...'
-    $COMPOSE up -d --build
+    # shellcheck disable=SC2086  # decoupage voulu : `profils` porte des options a part entiere.
+    $COMPOSE $profils up -d --build $recreer
 else
     # Rien à construire : l'image et les conteneurs sont sur le disque du poste. Si
     # l'image a disparu (poste reconstruit), Compose la reconstruira de lui-même.
-    $COMPOSE up -d
+    # shellcheck disable=SC2086  # idem, et `recreer` peut etre vide.
+    $COMPOSE $profils up -d $recreer
 fi
 
 # `vendor/` n'est pas versionné, et le volume masque celui que l'image porte : sans
@@ -102,12 +165,21 @@ echo 'MySQL repond sur le reseau.'
 # Ce que l'installateur va demander, lu **dans le fichier d'environnement** plutôt que
 # recopié ici : c'est le même fichier que lit la pile, il n'y a donc pas deux vérités
 # à tenir à jour.
-lire() {
-    sed -n "s/^$1=//p" "$ENV_FILE" | head -n 1
-}
-
 echo
-echo 'Le jeu : http://localhost:8080/'
+if [ -n "${CODESPACE_NAME:-}" ]; then
+    echo "Le jeu : https://${CODESPACE_NAME}-8080.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/"
+else
+    echo 'Le jeu : http://localhost:8080/'
+fi
+echo
+case "$(lire WS_ENABLED)" in
+1 | true | on | yes | oui)
+    echo "Canal temps reel : ${ws_url:-meme hote que la page, port ${ws_port:-8081}}"
+    ;;
+*)
+    echo 'Canal temps reel : desactive (WS_ENABLED=0), le jeu passe par l API JSON.'
+    ;;
+esac
 echo
 echo 'Formulaire de connexion MySQL de l installateur :'
 echo "  Hote          : $(lire DB_HOST)"
@@ -126,10 +198,9 @@ echo 'INSTALL_ADMIN_* du fichier d environnement.'
 #   → le compte `Admin` et trois voisins, mot de passe `demo`. Les réglages `CONFIG_*`
 #     du fichier d'environnement s'appliquent : `CONFIG_GAME_SPEED` raccourcit tout.
 #
-#   Le canal temps réel (service `ws`, port 8081) :
-#     docker compose --profile websocket up -d
-#
-#   La mise à jour du classement (service `stats`) : idem, profil `stats`.
+#   Alléger le poste : `WS_ENABLED=0` (repli sur l'API JSON, plus de canal temps réel)
+#   ou `STATS_ENABLED=0` (plus de recalcul du classement) dans `configs/.env.local`,
+#   puis relancer ce script — le service correspondant n'est alors plus démarré.
 #
 #   Les contrôles, exactement comme le dépôt les passe :
 #     docker compose exec -T app composer test
